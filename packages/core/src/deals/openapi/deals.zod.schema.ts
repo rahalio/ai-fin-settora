@@ -1,0 +1,1594 @@
+import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core';
+import { z } from 'zod';
+
+const createTradeDeal_Body = z
+  .object({
+    dealType: z.enum(['equityPostTrade', 'tradeFinance', 'syndicatedLoan']),
+    participantIds: z.array(z.string()).min(2),
+    externalRef: z.string().optional(),
+  })
+  .passthrough();
+const submitStateAssertion_Body = z
+  .object({
+    participantId: z.string(),
+    fields: z.object({}).partial().passthrough(),
+  })
+  .passthrough();
+const freezeDealFields_Body = z
+  .object({ fields: z.array(z.string()).min(1), reason: z.string().min(1) })
+  .passthrough();
+const attestDocumentMilestone_Body = z
+  .object({
+    milestoneType: z.enum([
+      'presentment',
+      'acceptance',
+      'discrepancy',
+      'paymentObligation',
+    ]),
+    status: z.enum(['attested', 'disputed', 'cleared']),
+    attestedBy: z.string(),
+  })
+  .passthrough();
+const recordCorporateActionEvent_Body = z
+  .object({
+    eventType: z.string().min(1),
+    attestedBy: z.string(),
+    details: z.object({}).partial().passthrough().optional(),
+  })
+  .passthrough();
+const DealType = z.enum(['equityPostTrade', 'tradeFinance', 'syndicatedLoan']);
+const DealStatus = z.enum([
+  'open',
+  'matched',
+  'settling',
+  'settled',
+  'failed',
+  'disputed',
+]);
+const Problem = z
+  .object({
+    type: z.string().url(),
+    title: z.string(),
+    status: z.number().int(),
+    detail: z.string(),
+    instance: z.string().url(),
+    code: z.string(),
+  })
+  .partial()
+  .passthrough();
+const DealId = z.string();
+const TradeDeal = z
+  .object({
+    dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+    dealType: z.enum(['equityPostTrade', 'tradeFinance', 'syndicatedLoan']),
+    status: z.enum([
+      'open',
+      'matched',
+      'settling',
+      'settled',
+      'failed',
+      'disputed',
+    ]),
+    participantIds: z.array(z.string()),
+    externalRef: z.string().optional(),
+    breakCount: z.number().int().gte(0).optional(),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const TradeDealListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+          dealType: z.enum([
+            'equityPostTrade',
+            'tradeFinance',
+            'syndicatedLoan',
+          ]),
+          status: z.enum([
+            'open',
+            'matched',
+            'settling',
+            'settled',
+            'failed',
+            'disputed',
+          ]),
+          participantIds: z.array(z.string()),
+          externalRef: z.string().optional(),
+          breakCount: z.number().int().gte(0).optional(),
+          createdAt: z.string().datetime({ offset: true }),
+          updatedAt: z.string().datetime({ offset: true }),
+        })
+        .passthrough()
+    ),
+    nextCursor: z.string().optional(),
+  })
+  .passthrough();
+const ResponseMeta = z
+  .object({
+    requestId: z.string().uuid(),
+    correlationId: z.string(),
+    generatedAt: z.string().datetime({ offset: true }),
+  })
+  .partial()
+  .passthrough();
+const TradeDealListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+              dealType: z.enum([
+                'equityPostTrade',
+                'tradeFinance',
+                'syndicatedLoan',
+              ]),
+              status: z.enum([
+                'open',
+                'matched',
+                'settling',
+                'settled',
+                'failed',
+                'disputed',
+              ]),
+              participantIds: z.array(z.string()),
+              externalRef: z.string().optional(),
+              breakCount: z.number().int().gte(0).optional(),
+              createdAt: z.string().datetime({ offset: true }),
+              updatedAt: z.string().datetime({ offset: true }),
+            })
+            .passthrough()
+        ),
+        nextCursor: z.string().optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const TradeDealCreateRequest = z
+  .object({
+    dealType: z.enum(['equityPostTrade', 'tradeFinance', 'syndicatedLoan']),
+    participantIds: z.array(z.string()).min(2),
+    externalRef: z.string().optional(),
+  })
+  .passthrough();
+const TradeDealResponse = z
+  .object({
+    data: z
+      .object({
+        dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+        dealType: z.enum(['equityPostTrade', 'tradeFinance', 'syndicatedLoan']),
+        status: z.enum([
+          'open',
+          'matched',
+          'settling',
+          'settled',
+          'failed',
+          'disputed',
+        ]),
+        participantIds: z.array(z.string()),
+        externalRef: z.string().optional(),
+        breakCount: z.number().int().gte(0).optional(),
+        createdAt: z.string().datetime({ offset: true }),
+        updatedAt: z.string().datetime({ offset: true }),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const AssertionId = z.string();
+const StateAssertion = z
+  .object({
+    assertionId: z.string().regex(/^asr_[0-9A-HJKMNP-TV-Z]{26}$/),
+    dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+    participantId: z.string(),
+    fields: z.object({}).partial().passthrough(),
+    assertedAt: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const StateAssertionListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          assertionId: z.string().regex(/^asr_[0-9A-HJKMNP-TV-Z]{26}$/),
+          dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+          participantId: z.string(),
+          fields: z.object({}).partial().passthrough(),
+          assertedAt: z.string().datetime({ offset: true }),
+        })
+        .passthrough()
+    ),
+    nextCursor: z.string().optional(),
+  })
+  .passthrough();
+const StateAssertionListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              assertionId: z.string().regex(/^asr_[0-9A-HJKMNP-TV-Z]{26}$/),
+              dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+              participantId: z.string(),
+              fields: z.object({}).partial().passthrough(),
+              assertedAt: z.string().datetime({ offset: true }),
+            })
+            .passthrough()
+        ),
+        nextCursor: z.string().optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const StateAssertionCreateRequest = z
+  .object({
+    participantId: z.string(),
+    fields: z.object({}).partial().passthrough(),
+  })
+  .passthrough();
+const StateAssertionResponse = z
+  .object({
+    data: z
+      .object({
+        assertionId: z.string().regex(/^asr_[0-9A-HJKMNP-TV-Z]{26}$/),
+        dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+        participantId: z.string(),
+        fields: z.object({}).partial().passthrough(),
+        assertedAt: z.string().datetime({ offset: true }),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const AgreedState = z
+  .object({
+    dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+    version: z.number().int().gte(1),
+    fields: z.object({}).partial().passthrough(),
+    agreedAt: z.string().datetime({ offset: true }),
+    hash: z.string().optional(),
+    frozenFields: z.array(z.string()).optional(),
+  })
+  .passthrough();
+const AgreedStateResponse = z
+  .object({
+    data: z
+      .object({
+        dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+        version: z.number().int().gte(1),
+        fields: z.object({}).partial().passthrough(),
+        agreedAt: z.string().datetime({ offset: true }),
+        hash: z.string().optional(),
+        frozenFields: z.array(z.string()).optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const FreezeFieldsRequest = z
+  .object({ fields: z.array(z.string()).min(1), reason: z.string().min(1) })
+  .passthrough();
+const MilestoneId = z.string();
+const DocumentMilestone = z
+  .object({
+    milestoneId: z.string().regex(/^msn_[0-9A-HJKMNP-TV-Z]{26}$/),
+    dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+    milestoneType: z.enum([
+      'presentment',
+      'acceptance',
+      'discrepancy',
+      'paymentObligation',
+    ]),
+    status: z.enum(['attested', 'disputed', 'cleared']),
+    attestedBy: z.string(),
+    attestedAt: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const DocumentMilestoneListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          milestoneId: z.string().regex(/^msn_[0-9A-HJKMNP-TV-Z]{26}$/),
+          dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+          milestoneType: z.enum([
+            'presentment',
+            'acceptance',
+            'discrepancy',
+            'paymentObligation',
+          ]),
+          status: z.enum(['attested', 'disputed', 'cleared']),
+          attestedBy: z.string(),
+          attestedAt: z.string().datetime({ offset: true }),
+        })
+        .passthrough()
+    ),
+  })
+  .passthrough();
+const DocumentMilestoneListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              milestoneId: z.string().regex(/^msn_[0-9A-HJKMNP-TV-Z]{26}$/),
+              dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+              milestoneType: z.enum([
+                'presentment',
+                'acceptance',
+                'discrepancy',
+                'paymentObligation',
+              ]),
+              status: z.enum(['attested', 'disputed', 'cleared']),
+              attestedBy: z.string(),
+              attestedAt: z.string().datetime({ offset: true }),
+            })
+            .passthrough()
+        ),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const DocumentMilestoneCreateRequest = z
+  .object({
+    milestoneType: z.enum([
+      'presentment',
+      'acceptance',
+      'discrepancy',
+      'paymentObligation',
+    ]),
+    status: z.enum(['attested', 'disputed', 'cleared']),
+    attestedBy: z.string(),
+  })
+  .passthrough();
+const DocumentMilestoneResponse = z
+  .object({
+    data: z
+      .object({
+        milestoneId: z.string().regex(/^msn_[0-9A-HJKMNP-TV-Z]{26}$/),
+        dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+        milestoneType: z.enum([
+          'presentment',
+          'acceptance',
+          'discrepancy',
+          'paymentObligation',
+        ]),
+        status: z.enum(['attested', 'disputed', 'cleared']),
+        attestedBy: z.string(),
+        attestedAt: z.string().datetime({ offset: true }),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const CorporateActionId = z.string();
+const CorporateActionEvent = z
+  .object({
+    corporateActionId: z.string().regex(/^cae_[0-9A-HJKMNP-TV-Z]{26}$/),
+    dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+    eventType: z.string(),
+    attestedBy: z.string(),
+    attestedAt: z.string().datetime({ offset: true }),
+    details: z.object({}).partial().passthrough().optional(),
+  })
+  .passthrough();
+const CorporateActionEventListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          corporateActionId: z.string().regex(/^cae_[0-9A-HJKMNP-TV-Z]{26}$/),
+          dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+          eventType: z.string(),
+          attestedBy: z.string(),
+          attestedAt: z.string().datetime({ offset: true }),
+          details: z.object({}).partial().passthrough().optional(),
+        })
+        .passthrough()
+    ),
+  })
+  .passthrough();
+const CorporateActionEventListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              corporateActionId: z
+                .string()
+                .regex(/^cae_[0-9A-HJKMNP-TV-Z]{26}$/),
+              dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+              eventType: z.string(),
+              attestedBy: z.string(),
+              attestedAt: z.string().datetime({ offset: true }),
+              details: z.object({}).partial().passthrough().optional(),
+            })
+            .passthrough()
+        ),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const CorporateActionEventCreateRequest = z
+  .object({
+    eventType: z.string().min(1),
+    attestedBy: z.string(),
+    details: z.object({}).partial().passthrough().optional(),
+  })
+  .passthrough();
+const CorporateActionEventResponse = z
+  .object({
+    data: z
+      .object({
+        corporateActionId: z.string().regex(/^cae_[0-9A-HJKMNP-TV-Z]{26}$/),
+        dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+        eventType: z.string(),
+        attestedBy: z.string(),
+        attestedAt: z.string().datetime({ offset: true }),
+        details: z.object({}).partial().passthrough().optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const ProvenanceLink = z
+  .object({
+    holderId: z.string(),
+    event: z.string(),
+    at: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const ProvenanceRecord = z
+  .object({
+    assetId: z.string(),
+    chain: z.array(
+      z
+        .object({
+          holderId: z.string(),
+          event: z.string(),
+          at: z.string().datetime({ offset: true }),
+        })
+        .passthrough()
+    ),
+  })
+  .passthrough();
+const ProvenanceRecordResponse = z
+  .object({
+    data: z
+      .object({
+        assetId: z.string(),
+        chain: z.array(
+          z
+            .object({
+              holderId: z.string(),
+              event: z.string(),
+              at: z.string().datetime({ offset: true }),
+            })
+            .passthrough()
+        ),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+
+export const schemas: any = {
+  createTradeDeal_Body,
+  submitStateAssertion_Body,
+  freezeDealFields_Body,
+  attestDocumentMilestone_Body,
+  recordCorporateActionEvent_Body,
+  DealType,
+  DealStatus,
+  Problem,
+  DealId,
+  TradeDeal,
+  TradeDealListData,
+  ResponseMeta,
+  TradeDealListResponse,
+  TradeDealCreateRequest,
+  TradeDealResponse,
+  AssertionId,
+  StateAssertion,
+  StateAssertionListData,
+  StateAssertionListResponse,
+  StateAssertionCreateRequest,
+  StateAssertionResponse,
+  AgreedState,
+  AgreedStateResponse,
+  FreezeFieldsRequest,
+  MilestoneId,
+  DocumentMilestone,
+  DocumentMilestoneListData,
+  DocumentMilestoneListResponse,
+  DocumentMilestoneCreateRequest,
+  DocumentMilestoneResponse,
+  CorporateActionId,
+  CorporateActionEvent,
+  CorporateActionEventListData,
+  CorporateActionEventListResponse,
+  CorporateActionEventCreateRequest,
+  CorporateActionEventResponse,
+  ProvenanceLink,
+  ProvenanceRecord,
+  ProvenanceRecordResponse,
+};
+
+const endpoints = makeApi([
+  {
+    method: 'get',
+    path: '/v1/deals',
+    alias: 'listTradeDeals',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'cursor',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().gte(1).lte(100).optional().default(25),
+      },
+      {
+        name: 'dealType',
+        type: 'Query',
+        schema: z
+          .enum(['equityPostTrade', 'tradeFinance', 'syndicatedLoan'])
+          .optional(),
+      },
+      {
+        name: 'status',
+        type: 'Query',
+        schema: z
+          .enum([
+            'open',
+            'matched',
+            'settling',
+            'settled',
+            'failed',
+            'disputed',
+          ])
+          .optional(),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  dealType: z.enum([
+                    'equityPostTrade',
+                    'tradeFinance',
+                    'syndicatedLoan',
+                  ]),
+                  status: z.enum([
+                    'open',
+                    'matched',
+                    'settling',
+                    'settled',
+                    'failed',
+                    'disputed',
+                  ]),
+                  participantIds: z.array(z.string()),
+                  externalRef: z.string().optional(),
+                  breakCount: z.number().int().gte(0).optional(),
+                  createdAt: z.string().datetime({ offset: true }),
+                  updatedAt: z.string().datetime({ offset: true }),
+                })
+                .passthrough()
+            ),
+            nextCursor: z.string().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/deals',
+    alias: 'createTradeDeal',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: createTradeDeal_Body,
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+            dealType: z.enum([
+              'equityPostTrade',
+              'tradeFinance',
+              'syndicatedLoan',
+            ]),
+            status: z.enum([
+              'open',
+              'matched',
+              'settling',
+              'settled',
+              'failed',
+              'disputed',
+            ]),
+            participantIds: z.array(z.string()),
+            externalRef: z.string().optional(),
+            breakCount: z.number().int().gte(0).optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            updatedAt: z.string().datetime({ offset: true }),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Malformed request`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/deals/:dealId',
+    alias: 'getTradeDeal',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'dealId',
+        type: 'Path',
+        schema: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+            dealType: z.enum([
+              'equityPostTrade',
+              'tradeFinance',
+              'syndicatedLoan',
+            ]),
+            status: z.enum([
+              'open',
+              'matched',
+              'settling',
+              'settled',
+              'failed',
+              'disputed',
+            ]),
+            participantIds: z.array(z.string()),
+            externalRef: z.string().optional(),
+            breakCount: z.number().int().gte(0).optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            updatedAt: z.string().datetime({ offset: true }),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/deals/:dealId/agreed-state',
+    alias: 'getAgreedState',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'dealId',
+        type: 'Path',
+        schema: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+            version: z.number().int().gte(1),
+            fields: z.object({}).partial().passthrough(),
+            agreedAt: z.string().datetime({ offset: true }),
+            hash: z.string().optional(),
+            frozenFields: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/deals/:dealId/assertions',
+    alias: 'listDealAssertions',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'dealId',
+        type: 'Path',
+        schema: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+      {
+        name: 'cursor',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().gte(1).lte(100).optional().default(25),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  assertionId: z.string().regex(/^asr_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  participantId: z.string(),
+                  fields: z.object({}).partial().passthrough(),
+                  assertedAt: z.string().datetime({ offset: true }),
+                })
+                .passthrough()
+            ),
+            nextCursor: z.string().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/deals/:dealId/assertions',
+    alias: 'submitStateAssertion',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: submitStateAssertion_Body,
+      },
+      {
+        name: 'dealId',
+        type: 'Path',
+        schema: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            assertionId: z.string().regex(/^asr_[0-9A-HJKMNP-TV-Z]{26}$/),
+            dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+            participantId: z.string(),
+            fields: z.object({}).partial().passthrough(),
+            assertedAt: z.string().datetime({ offset: true }),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Malformed request`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/deals/:dealId/corporate-actions',
+    alias: 'listCorporateActionEvents',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'dealId',
+        type: 'Path',
+        schema: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  corporateActionId: z
+                    .string()
+                    .regex(/^cae_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  eventType: z.string(),
+                  attestedBy: z.string(),
+                  attestedAt: z.string().datetime({ offset: true }),
+                  details: z.object({}).partial().passthrough().optional(),
+                })
+                .passthrough()
+            ),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/deals/:dealId/corporate-actions',
+    alias: 'recordCorporateActionEvent',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: recordCorporateActionEvent_Body,
+      },
+      {
+        name: 'dealId',
+        type: 'Path',
+        schema: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            corporateActionId: z.string().regex(/^cae_[0-9A-HJKMNP-TV-Z]{26}$/),
+            dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+            eventType: z.string(),
+            attestedBy: z.string(),
+            attestedAt: z.string().datetime({ offset: true }),
+            details: z.object({}).partial().passthrough().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Malformed request`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/deals/:dealId/freeze-fields',
+    alias: 'freezeDealFields',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: freezeDealFields_Body,
+      },
+      {
+        name: 'dealId',
+        type: 'Path',
+        schema: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+            version: z.number().int().gte(1),
+            fields: z.object({}).partial().passthrough(),
+            agreedAt: z.string().datetime({ offset: true }),
+            hash: z.string().optional(),
+            frozenFields: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/deals/:dealId/milestones',
+    alias: 'listDocumentMilestones',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'dealId',
+        type: 'Path',
+        schema: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  milestoneId: z.string().regex(/^msn_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  milestoneType: z.enum([
+                    'presentment',
+                    'acceptance',
+                    'discrepancy',
+                    'paymentObligation',
+                  ]),
+                  status: z.enum(['attested', 'disputed', 'cleared']),
+                  attestedBy: z.string(),
+                  attestedAt: z.string().datetime({ offset: true }),
+                })
+                .passthrough()
+            ),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/deals/:dealId/milestones',
+    alias: 'attestDocumentMilestone',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: attestDocumentMilestone_Body,
+      },
+      {
+        name: 'dealId',
+        type: 'Path',
+        schema: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            milestoneId: z.string().regex(/^msn_[0-9A-HJKMNP-TV-Z]{26}$/),
+            dealId: z.string().regex(/^dea_[0-9A-HJKMNP-TV-Z]{26}$/),
+            milestoneType: z.enum([
+              'presentment',
+              'acceptance',
+              'discrepancy',
+              'paymentObligation',
+            ]),
+            status: z.enum(['attested', 'disputed', 'cleared']),
+            attestedBy: z.string(),
+            attestedAt: z.string().datetime({ offset: true }),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Malformed request`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/provenance/:assetId',
+    alias: 'getAssetProvenance',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'assetId',
+        type: 'Path',
+        schema: z.string().min(1),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            assetId: z.string(),
+            chain: z.array(
+              z
+                .object({
+                  holderId: z.string(),
+                  event: z.string(),
+                  at: z.string().datetime({ offset: true }),
+                })
+                .passthrough()
+            ),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Authenticated but not permitted`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+]);
+
+export const api: any = new Zodios(
+  'https://api.ddd-codegen-starter.local/v1',
+  endpoints
+);
+
+export function createApiClient(baseUrl: string, options?: ZodiosOptions): any {
+  return new Zodios(baseUrl, endpoints, options);
+}

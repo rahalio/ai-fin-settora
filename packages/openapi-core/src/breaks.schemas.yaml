@@ -1,0 +1,80 @@
+openapi: 3.1.0
+info:
+  title: Breaks schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    BreakId:
+      type: string
+      pattern: '^brk_[0-9A-HJKMNP-TV-Z]{26}$'
+    BreakStatus:
+      type: string
+      enum: [open, investigating, resolved, escalated]
+    BreakCase:
+      type: object
+      required: [breakId, dealId, conflictingFields, status, openedAt]
+      properties:
+        breakId: { $ref: '#/components/schemas/BreakId' }
+        dealId: { type: string }
+        conflictingFields:
+          type: array
+          items: { type: string }
+        status: { $ref: '#/components/schemas/BreakStatus' }
+        ownerParticipantId: { type: string }
+        dueAt: { type: string, format: date-time }
+        openedAt: { type: string, format: date-time }
+        resolvedAt: { type: string, format: date-time }
+        resolutionNote: { type: string }
+        escalationReason: { type: string }
+    BreakCaseCreateRequest:
+      type: object
+      required: [dealId, conflictingFields]
+      properties:
+        dealId: { type: string }
+        conflictingFields:
+          type: array
+          items: { type: string }
+          minItems: 1
+        assertionIds:
+          type: array
+          items: { type: string }
+        ownerParticipantId: { type: string }
+        dueAt: { type: string, format: date-time }
+    BreakResolveRequest:
+      type: object
+      required: [resolutionNote]
+      properties:
+        resolutionNote: { type: string, minLength: 1 }
+    BreakEscalateRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 1 }
+        ownerParticipantId: { type: string }
+    BreakAssignRequest:
+      type: object
+      required: [ownerParticipantId]
+      properties:
+        ownerParticipantId: { type: string }
+        dueAt: { type: string, format: date-time }
+    BreakCaseListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/BreakCase' }
+        nextCursor: { type: string }
+    BreakCaseResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/BreakCase' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    BreakCaseListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/BreakCaseListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }

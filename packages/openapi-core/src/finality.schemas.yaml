@@ -1,0 +1,55 @@
+openapi: 3.1.0
+info:
+  title: Finality schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    AttestationId:
+      type: string
+      pattern: '^fat_[0-9A-HJKMNP-TV-Z]{26}$'
+    FinalityStatus:
+      type: string
+      enum: [provisional, final, void]
+    FinalityAttestation:
+      type: object
+      required: [attestationId, instructionId, status, jurisdiction, recordedAt]
+      properties:
+        attestationId: { $ref: '#/components/schemas/AttestationId' }
+        instructionId: { type: string }
+        dealId: { type: string }
+        status: { $ref: '#/components/schemas/FinalityStatus' }
+        jurisdiction: { type: string }
+        opinionVersion: { type: string }
+        voidReason: { type: string }
+        recordedAt: { type: string, format: date-time }
+    FinalityAttestationCreateRequest:
+      type: object
+      required: [instructionId, status, jurisdiction]
+      properties:
+        instructionId: { type: string }
+        dealId: { type: string }
+        status: { $ref: '#/components/schemas/FinalityStatus' }
+        jurisdiction: { type: string, minLength: 1 }
+        opinionVersion: { type: string }
+        voidReason: { type: string }
+    FinalityAttestationListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/FinalityAttestation' }
+        nextCursor: { type: string }
+    FinalityAttestationResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/FinalityAttestation' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    FinalityAttestationListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/FinalityAttestationListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }

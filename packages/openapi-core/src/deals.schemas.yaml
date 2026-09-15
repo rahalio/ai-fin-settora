@@ -1,0 +1,242 @@
+openapi: 3.1.0
+info:
+  title: Deals schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    DealId:
+      type: string
+      pattern: '^dea_[0-9A-HJKMNP-TV-Z]{26}$'
+    AssertionId:
+      type: string
+      pattern: '^asr_[0-9A-HJKMNP-TV-Z]{26}$'
+    MilestoneId:
+      type: string
+      pattern: '^msn_[0-9A-HJKMNP-TV-Z]{26}$'
+    CorporateActionId:
+      type: string
+      pattern: '^cae_[0-9A-HJKMNP-TV-Z]{26}$'
+    DealType:
+      type: string
+      enum: [equityPostTrade, tradeFinance, syndicatedLoan]
+    DealStatus:
+      type: string
+      enum: [open, matched, settling, settled, failed, disputed]
+    TradeDeal:
+      type: object
+      required: [dealId, dealType, status, participantIds, createdAt, updatedAt]
+      properties:
+        dealId: { $ref: '#/components/schemas/DealId' }
+        dealType: { $ref: '#/components/schemas/DealType' }
+        status: { $ref: '#/components/schemas/DealStatus' }
+        participantIds:
+          type: array
+          items: { type: string }
+        externalRef: { type: string }
+        breakCount: { type: integer, minimum: 0 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    TradeDealCreateRequest:
+      type: object
+      required: [dealType, participantIds]
+      properties:
+        dealType: { $ref: '#/components/schemas/DealType' }
+        participantIds:
+          type: array
+          items: { type: string }
+          minItems: 2
+        externalRef: { type: string }
+    StateAssertion:
+      type: object
+      required: [assertionId, dealId, participantId, fields, assertedAt]
+      properties:
+        assertionId: { $ref: '#/components/schemas/AssertionId' }
+        dealId: { $ref: '#/components/schemas/DealId' }
+        participantId: { type: string }
+        fields:
+          type: object
+          additionalProperties: true
+        assertedAt: { type: string, format: date-time }
+    StateAssertionCreateRequest:
+      type: object
+      required: [participantId, fields]
+      properties:
+        participantId: { type: string }
+        fields:
+          type: object
+          additionalProperties: true
+    AgreedState:
+      type: object
+      required: [dealId, version, fields, agreedAt]
+      properties:
+        dealId: { $ref: '#/components/schemas/DealId' }
+        version: { type: integer, minimum: 1 }
+        fields:
+          type: object
+          additionalProperties: true
+        agreedAt: { type: string, format: date-time }
+        hash: { type: string }
+        frozenFields:
+          type: array
+          items: { type: string }
+    FreezeFieldsRequest:
+      type: object
+      required: [fields, reason]
+      properties:
+        fields:
+          type: array
+          items: { type: string }
+          minItems: 1
+        reason: { type: string, minLength: 1 }
+    DocumentMilestone:
+      type: object
+      required: [milestoneId, dealId, milestoneType, status, attestedBy, attestedAt]
+      properties:
+        milestoneId: { $ref: '#/components/schemas/MilestoneId' }
+        dealId: { $ref: '#/components/schemas/DealId' }
+        milestoneType:
+          type: string
+          enum: [presentment, acceptance, discrepancy, paymentObligation]
+        status:
+          type: string
+          enum: [attested, disputed, cleared]
+        attestedBy: { type: string }
+        attestedAt: { type: string, format: date-time }
+    DocumentMilestoneCreateRequest:
+      type: object
+      required: [milestoneType, status, attestedBy]
+      properties:
+        milestoneType:
+          type: string
+          enum: [presentment, acceptance, discrepancy, paymentObligation]
+        status:
+          type: string
+          enum: [attested, disputed, cleared]
+        attestedBy: { type: string }
+    CorporateActionEvent:
+      type: object
+      required: [corporateActionId, dealId, eventType, attestedBy, attestedAt]
+      properties:
+        corporateActionId: { $ref: '#/components/schemas/CorporateActionId' }
+        dealId: { $ref: '#/components/schemas/DealId' }
+        eventType: { type: string }
+        attestedBy: { type: string }
+        attestedAt: { type: string, format: date-time }
+        details:
+          type: object
+          additionalProperties: true
+    CorporateActionEventCreateRequest:
+      type: object
+      required: [eventType, attestedBy]
+      properties:
+        eventType: { type: string, minLength: 1 }
+        attestedBy: { type: string }
+        details:
+          type: object
+          additionalProperties: true
+    ProvenanceLink:
+      type: object
+      required: [holderId, event, at]
+      properties:
+        holderId: { type: string }
+        event: { type: string }
+        at: { type: string, format: date-time }
+    ProvenanceRecord:
+      type: object
+      required: [assetId, chain]
+      properties:
+        assetId: { type: string }
+        chain:
+          type: array
+          items: { $ref: '#/components/schemas/ProvenanceLink' }
+    TradeDealListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/TradeDeal' }
+        nextCursor: { type: string }
+    StateAssertionListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/StateAssertion' }
+        nextCursor: { type: string }
+    DocumentMilestoneListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/DocumentMilestone' }
+    CorporateActionEventListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/CorporateActionEvent' }
+    TradeDealResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/TradeDeal' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    TradeDealListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/TradeDealListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    StateAssertionResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/StateAssertion' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    StateAssertionListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/StateAssertionListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    AgreedStateResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/AgreedState' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    DocumentMilestoneResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/DocumentMilestone' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    DocumentMilestoneListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/DocumentMilestoneListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    CorporateActionEventResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/CorporateActionEvent' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    CorporateActionEventListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/CorporateActionEventListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    ProvenanceRecordResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/ProvenanceRecord' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }

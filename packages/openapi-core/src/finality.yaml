@@ -1,0 +1,92 @@
+openapi: 3.1.0
+info:
+  title: Settora Finality API
+  version: 0.1.0
+  description: Jurisdictional finality attestations (provisional / final / void).
+  x-domain: finality
+  x-product-slug: settora
+  license: { name: Proprietary }
+servers:
+  - url: https://api.settora.local
+security:
+  - apiKey: []
+tags:
+  - name: Finality
+    description: Jurisdictional finality attestations
+paths:
+  /v1/finality/attestations:
+    get:
+      operationId: listFinalityAttestations
+      tags: [Finality]
+      summary: List finality attestations
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: status
+          in: query
+          schema: { $ref: ./finality.schemas.yaml#/components/schemas/FinalityStatus }
+        - name: instructionId
+          in: query
+          schema: { type: string }
+        - name: dealId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Attestations page
+          content:
+            application/json:
+              schema: { $ref: ./finality.schemas.yaml#/components/schemas/FinalityAttestationListResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: recordFinalityAttestation
+      tags: [Finality]
+      summary: Record a finality attestation
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: ./finality.schemas.yaml#/components/schemas/FinalityAttestationCreateRequest }
+      responses:
+        '201':
+          description: Attestation recorded
+          content:
+            application/json:
+              schema: { $ref: ./finality.schemas.yaml#/components/schemas/FinalityAttestationResponse }
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/finality/attestations/{attestationId}:
+    get:
+      operationId: getFinalityAttestation
+      tags: [Finality]
+      summary: Get finality attestation
+      parameters:
+        - name: attestationId
+          in: path
+          required: true
+          schema: { $ref: ./finality.schemas.yaml#/components/schemas/AttestationId }
+      responses:
+        '200':
+          description: Attestation
+          content:
+            application/json:
+              schema: { $ref: ./finality.schemas.yaml#/components/schemas/FinalityAttestationResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

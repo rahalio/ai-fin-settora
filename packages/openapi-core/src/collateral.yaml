@@ -1,0 +1,97 @@
+openapi: 3.1.0
+info:
+  title: Settora Collateral API
+  version: 0.1.0
+  description: In-flight collateral and margin visibility; release on finality.
+  x-domain: collateral
+  x-product-slug: settora
+  license: { name: Proprietary }
+servers:
+  - url: https://api.settora.local
+security:
+  - apiKey: []
+tags:
+  - name: Collateral
+    description: In-flight collateral and margin visibility
+paths:
+  /v1/collateral/locks:
+    get:
+      operationId: listCollateralLocks
+      tags: [Collateral]
+      summary: List collateral locks
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: dealId
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { $ref: ./collateral.schemas.yaml#/components/schemas/CollateralLockStatus }
+      responses:
+        '200':
+          description: Locks page
+          content:
+            application/json:
+              schema: { $ref: ./collateral.schemas.yaml#/components/schemas/CollateralLockListResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/collateral/locks/{lockId}:
+    get:
+      operationId: getCollateralLock
+      tags: [Collateral]
+      summary: Get collateral lock
+      parameters:
+        - name: lockId
+          in: path
+          required: true
+          schema: { $ref: ./collateral.schemas.yaml#/components/schemas/LockId }
+      responses:
+        '200':
+          description: Lock
+          content:
+            application/json:
+              schema: { $ref: ./collateral.schemas.yaml#/components/schemas/CollateralLockResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/collateral/locks/{lockId}/release:
+    post:
+      operationId: releaseCollateralLock
+      tags: [Collateral]
+      summary: Release collateral on finality
+      x-repository: none
+      parameters:
+        - name: lockId
+          in: path
+          required: true
+          schema: { $ref: ./collateral.schemas.yaml#/components/schemas/LockId }
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: ./collateral.schemas.yaml#/components/schemas/CollateralReleaseRequest }
+      responses:
+        '200':
+          description: Released
+          content:
+            application/json:
+              schema: { $ref: ./collateral.schemas.yaml#/components/schemas/CollateralLockResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

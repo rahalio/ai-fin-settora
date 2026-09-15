@@ -1,0 +1,139 @@
+openapi: 3.1.0
+info:
+  title: Settora Settlements API
+  version: 0.1.0
+  description: Settlement instructions to incumbent CSD/CCP/payment rails.
+  x-domain: settlements
+  x-product-slug: settora
+  license: { name: Proprietary }
+servers:
+  - url: https://api.settora.local
+security:
+  - apiKey: []
+tags:
+  - name: Settlements
+    description: Settlement instructions to incumbent rails
+paths:
+  /v1/settlements/instructions:
+    get:
+      operationId: listSettlementInstructions
+      tags: [Settlements]
+      summary: List settlement instructions
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: dealId
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { $ref: ./settlements.schemas.yaml#/components/schemas/InstructionStatus }
+      responses:
+        '200':
+          description: Instructions page
+          content:
+            application/json:
+              schema: { $ref: ./settlements.schemas.yaml#/components/schemas/SettlementInstructionListResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createSettlementInstruction
+      tags: [Settlements]
+      summary: Create instruction from agreed state
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: ./settlements.schemas.yaml#/components/schemas/SettlementInstructionCreateRequest }
+      responses:
+        '201':
+          description: Instruction created
+          content:
+            application/json:
+              schema: { $ref: ./settlements.schemas.yaml#/components/schemas/SettlementInstructionResponse }
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/settlements/instructions/{instructionId}:
+    get:
+      operationId: getSettlementInstruction
+      tags: [Settlements]
+      summary: Get settlement instruction
+      parameters:
+        - name: instructionId
+          in: path
+          required: true
+          schema: { $ref: ./settlements.schemas.yaml#/components/schemas/InstructionId }
+      responses:
+        '200':
+          description: Instruction
+          content:
+            application/json:
+              schema: { $ref: ./settlements.schemas.yaml#/components/schemas/SettlementInstructionResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/settlements/instructions/{instructionId}/send:
+    post:
+      operationId: sendSettlementInstruction
+      tags: [Settlements]
+      summary: Send instruction to incumbent rail
+      x-repository: none
+      parameters:
+        - name: instructionId
+          in: path
+          required: true
+          schema: { $ref: ./settlements.schemas.yaml#/components/schemas/InstructionId }
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '200':
+          description: Sent
+          content:
+            application/json:
+              schema: { $ref: ./settlements.schemas.yaml#/components/schemas/SettlementInstructionResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/settlements/instructions/{instructionId}/cancel:
+    post:
+      operationId: cancelSettlementInstruction
+      tags: [Settlements]
+      summary: Cancel instruction pre-rail
+      x-repository: none
+      parameters:
+        - name: instructionId
+          in: path
+          required: true
+          schema: { $ref: ./settlements.schemas.yaml#/components/schemas/InstructionId }
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '200':
+          description: Cancelled
+          content:
+            application/json:
+              schema: { $ref: ./settlements.schemas.yaml#/components/schemas/SettlementInstructionResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

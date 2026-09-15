@@ -1,0 +1,55 @@
+openapi: 3.1.0
+info:
+  title: Settlements schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    InstructionId:
+      type: string
+      pattern: '^ins_[0-9A-HJKMNP-TV-Z]{26}$'
+    SettlementRail:
+      type: string
+      enum: [csd, ccp, payment]
+    InstructionStatus:
+      type: string
+      enum: [created, sent, acknowledged, failed, cancelled]
+    SettlementInstruction:
+      type: object
+      required: [instructionId, dealId, rail, status, createdAt]
+      properties:
+        instructionId: { $ref: '#/components/schemas/InstructionId' }
+        dealId: { type: string }
+        rail: { $ref: '#/components/schemas/SettlementRail' }
+        status: { $ref: '#/components/schemas/InstructionStatus' }
+        payloadRef: { type: string }
+        createdAt: { type: string, format: date-time }
+        sentAt: { type: string, format: date-time }
+        acknowledgedAt: { type: string, format: date-time }
+    SettlementInstructionCreateRequest:
+      type: object
+      required: [dealId, rail]
+      properties:
+        dealId: { type: string }
+        rail: { $ref: '#/components/schemas/SettlementRail' }
+        payloadRef: { type: string }
+    SettlementInstructionListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/SettlementInstruction' }
+        nextCursor: { type: string }
+    SettlementInstructionResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/SettlementInstruction' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    SettlementInstructionListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/SettlementInstructionListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }

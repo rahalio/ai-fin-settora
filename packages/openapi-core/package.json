@@ -1,0 +1,18 @@
+{
+  "name": "@settora/openapi-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenAPI contracts for Settora (common + identity + product domains)",
+  "scripts": {
+    "lint:domains": "redocly lint",
+    "bundle:domains": "mkdir -p src/.bundled && redocly bundle identity --output src/.bundled/identity.openapi.yaml && redocly bundle identity --output src/.bundled/identity.json && redocly bundle participants --output src/.bundled/participants.openapi.yaml && redocly bundle participants --output src/.bundled/participants.json && redocly bundle deals --output src/.bundled/deals.openapi.yaml && redocly bundle deals --output src/.bundled/deals.json && redocly bundle breaks --output src/.bundled/breaks.openapi.yaml && redocly bundle breaks --output src/.bundled/breaks.json && redocly bundle settlements --output src/.bundled/settlements.openapi.yaml && redocly bundle settlements --output src/.bundled/settlements.json && redocly bundle finality --output src/.bundled/finality.openapi.yaml && redocly bundle finality --output src/.bundled/finality.json && redocly bundle collateral --output src/.bundled/collateral.openapi.yaml && redocly bundle collateral --output src/.bundled/collateral.json && redocly bundle governance --output src/.bundled/governance.openapi.yaml && redocly bundle governance --output src/.bundled/governance.json && redocly bundle supervision --output src/.bundled/supervision.openapi.yaml && redocly bundle supervision --output src/.bundled/supervision.json",
+    "lint": "pnpm run lint:domains",
+    "bundle": "pnpm run bundle:domains"
+  },
+  "devDependencies": {
+    "@redocly/cli": "^1.34.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

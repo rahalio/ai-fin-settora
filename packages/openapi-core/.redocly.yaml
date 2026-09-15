@@ -1,0 +1,36 @@
+apis:
+  identity:
+    root: src/identity.yaml
+  participants:
+    root: src/participants.yaml
+  deals:
+    root: src/deals.yaml
+  breaks:
+    root: src/breaks.yaml
+  settlements:
+    root: src/settlements.yaml
+  finality:
+    root: src/finality.yaml
+  collateral:
+    root: src/collateral.yaml
+  governance:
+    root: src/governance.yaml
+  supervision:
+    root: src/supervision.yaml
+
+extends:
+  - recommended
+
+rules:
+  no-unused-components: off
+  operation-4xx-response: warn
+  info-license: off
+  info-license-url: off
+  tag-description: off
+  operation-operationId: error
+  no-invalid-media-type-examples: off
+
+theme:
+  openapi:
+    generateCodeSamples:
+      languages: []

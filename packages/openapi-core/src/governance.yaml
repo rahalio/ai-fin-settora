@@ -1,0 +1,153 @@
+openapi: 3.1.0
+info:
+  title: Settora Governance API
+  version: 0.1.0
+  description: Rulebook versions, governance votes, participant suspension.
+  x-domain: governance
+  x-product-slug: settora
+  license: { name: Proprietary }
+servers:
+  - url: https://api.settora.local
+security:
+  - apiKey: []
+tags:
+  - name: Governance
+    description: Rulebook versions and participant suspension
+paths:
+  /v1/governance/rulebooks:
+    get:
+      operationId: listRulebookVersions
+      tags: [Governance]
+      summary: List rulebook versions
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Rulebooks
+          content:
+            application/json:
+              schema: { $ref: ./governance.schemas.yaml#/components/schemas/RulebookVersionListResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: publishRulebookVersion
+      tags: [Governance]
+      summary: Publish a rulebook / schema version
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: ./governance.schemas.yaml#/components/schemas/RulebookVersionCreateRequest }
+      responses:
+        '201':
+          description: Published
+          content:
+            application/json:
+              schema: { $ref: ./governance.schemas.yaml#/components/schemas/RulebookVersionResponse }
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/governance/rulebooks/{rulebookId}:
+    get:
+      operationId: getRulebookVersion
+      tags: [Governance]
+      summary: Get rulebook version
+      parameters:
+        - name: rulebookId
+          in: path
+          required: true
+          schema: { $ref: ./governance.schemas.yaml#/components/schemas/RulebookId }
+      responses:
+        '200':
+          description: Rulebook
+          content:
+            application/json:
+              schema: { $ref: ./governance.schemas.yaml#/components/schemas/RulebookVersionResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/governance/votes:
+    get:
+      operationId: listGovernanceVotes
+      tags: [Governance]
+      summary: List governance votes
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Votes
+          content:
+            application/json:
+              schema: { $ref: ./governance.schemas.yaml#/components/schemas/GovernanceVoteListResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: castGovernanceVote
+      tags: [Governance]
+      summary: Cast a governance vote
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: ./governance.schemas.yaml#/components/schemas/GovernanceVoteCreateRequest }
+      responses:
+        '201':
+          description: Vote recorded
+          content:
+            application/json:
+              schema: { $ref: ./governance.schemas.yaml#/components/schemas/GovernanceVoteResponse }
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/participants/{participantId}/suspend:
+    post:
+      operationId: suspendParticipant
+      tags: [Governance]
+      summary: Suspend a participant
+      x-repository: none
+      parameters:
+        - name: participantId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: ./governance.schemas.yaml#/components/schemas/SuspendParticipantRequest }
+      responses:
+        '202':
+          description: Suspension accepted
+          content:
+            application/json:
+              schema: { $ref: ./governance.schemas.yaml#/components/schemas/SuspendParticipantResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

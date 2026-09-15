@@ -1,0 +1,50 @@
+openapi: 3.1.0
+info:
+  title: Collateral schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    LockId:
+      type: string
+      pattern: '^clk_[0-9A-HJKMNP-TV-Z]{26}$'
+    CollateralLockStatus:
+      type: string
+      enum: [locked, released, partiallyReleased]
+    CollateralLock:
+      type: object
+      required: [lockId, dealId, amount, currency, status, createdAt]
+      properties:
+        lockId: { $ref: '#/components/schemas/LockId' }
+        dealId: { type: string }
+        amount: { type: string, pattern: '^-?\d+(\.\d{1,5})?$' }
+        currency: { $ref: ./common/primitives.yaml#/components/schemas/Currency }
+        status: { $ref: '#/components/schemas/CollateralLockStatus' }
+        failRisk: { type: string, enum: [low, medium, high] }
+        createdAt: { type: string, format: date-time }
+        releasedAt: { type: string, format: date-time }
+    CollateralReleaseRequest:
+      type: object
+      properties:
+        reason: { type: string }
+        attestationId: { type: string }
+    CollateralLockListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/CollateralLock' }
+        nextCursor: { type: string }
+    CollateralLockResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/CollateralLock' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    CollateralLockListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/CollateralLockListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }

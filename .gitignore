@@ -1,12 +1,8 @@
 node_modules/
-.next/
 dist/
-build/
-out/
+.next/
 coverage/
-.turbo/
-.cache/
-*.log
+*.tsbuildinfo
 .DS_Store
 .env
 .env.*
@@ -14,8 +10,19 @@ coverage/
 *.pem
 .venv/
 __pycache__/
+*.pyc
+test-results/
+playwright-report/
+*.log
+.turbo/
+.cache/
+build/
+out/
 
-# Codegen — do not push
+# OpenAPI bundle output
+packages/openapi-core/src/.bundled/
+
+# Codegen tool — local only; never commit or push
 .codegen/
 codegen/
 **/zero_codegen/

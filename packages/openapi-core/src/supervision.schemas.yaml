@@ -1,0 +1,70 @@
+openapi: 3.1.0
+info:
+  title: Supervision schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    SubscriptionId:
+      type: string
+      pattern: '^sub_[0-9A-HJKMNP-TV-Z]{26}$'
+    SupervisorySubscription:
+      type: object
+      required: [subscriptionId, regulatorParticipantId, scope, active, createdAt]
+      properties:
+        subscriptionId: { $ref: '#/components/schemas/SubscriptionId' }
+        regulatorParticipantId: { type: string }
+        scope: { type: string }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        lastPulledAt: { type: string, format: date-time }
+    SupervisorySubscriptionCreateRequest:
+      type: object
+      required: [regulatorParticipantId, scope]
+      properties:
+        regulatorParticipantId: { type: string }
+        scope: { type: string, minLength: 1 }
+        active: { type: boolean, default: true }
+    SupervisoryFeedItem:
+      type: object
+      required: [dealId, fieldKey, value, agreedAt, timestamp]
+      properties:
+        dealId: { type: string }
+        fieldKey: { type: string }
+        value: {}
+        agreedAt: { type: string, format: date-time }
+        timestamp: { type: string, format: date-time }
+    SupervisorySubscriptionListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/SupervisorySubscription' }
+        nextCursor: { type: string }
+    SupervisoryFeedData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/SupervisoryFeedItem' }
+        nextCursor: { type: string }
+    SupervisorySubscriptionResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/SupervisorySubscription' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    SupervisorySubscriptionListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/SupervisorySubscriptionListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    SupervisoryFeedResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/SupervisoryFeedData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }

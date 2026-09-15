@@ -1,0 +1,107 @@
+openapi: 3.1.0
+info:
+  title: Governance schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    RulebookId:
+      type: string
+      pattern: '^rlb_[0-9A-HJKMNP-TV-Z]{26}$'
+    VoteId:
+      type: string
+      pattern: '^vot_[0-9A-HJKMNP-TV-Z]{26}$'
+    RulebookVersion:
+      type: object
+      required: [rulebookId, version, effectiveFrom, createdAt]
+      properties:
+        rulebookId: { $ref: '#/components/schemas/RulebookId' }
+        version: { type: string }
+        effectiveFrom: { type: string, format: date-time }
+        summary: { type: string }
+        schemaDiff: { type: string }
+        createdAt: { type: string, format: date-time }
+    RulebookVersionCreateRequest:
+      type: object
+      required: [version, effectiveFrom]
+      properties:
+        version: { type: string, minLength: 1 }
+        effectiveFrom: { type: string, format: date-time }
+        summary: { type: string }
+        schemaDiff: { type: string }
+    VoteChoice:
+      type: string
+      enum: [for, against, abstain]
+    GovernanceVote:
+      type: object
+      required: [voteId, proposal, voterParticipantId, vote, votedAt]
+      properties:
+        voteId: { $ref: '#/components/schemas/VoteId' }
+        proposal: { type: string }
+        voterParticipantId: { type: string }
+        vote: { $ref: '#/components/schemas/VoteChoice' }
+        votedAt: { type: string, format: date-time }
+    GovernanceVoteCreateRequest:
+      type: object
+      required: [proposal, voterParticipantId, vote]
+      properties:
+        proposal: { type: string, minLength: 1 }
+        voterParticipantId: { type: string }
+        vote: { $ref: '#/components/schemas/VoteChoice' }
+    SuspendParticipantRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 1 }
+    RulebookVersionListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/RulebookVersion' }
+        nextCursor: { type: string }
+    GovernanceVoteListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/GovernanceVote' }
+        nextCursor: { type: string }
+    RulebookVersionResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/RulebookVersion' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    RulebookVersionListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/RulebookVersionListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    GovernanceVoteResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/GovernanceVote' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    GovernanceVoteListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/GovernanceVoteListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    SuspendParticipantResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [participantId, status, reason]
+          properties:
+            participantId: { type: string }
+            status: { type: string, enum: [suspended] }
+            reason: { type: string }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }

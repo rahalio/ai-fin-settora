@@ -1,0 +1,69 @@
+openapi: 3.1.0
+info:
+  title: Participants schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    ParticipantId:
+      type: string
+      pattern: '^ptc_[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Prefixed participant id
+    ParticipantRole:
+      type: string
+      enum: [brokerDealer, custodian, agentBank, csd, ccp, tradeFinanceBank, regulator]
+    ParticipantStatus:
+      type: string
+      enum: [active, suspended, pending]
+    Participant:
+      type: object
+      required: [participantId, legalName, role, status, assuranceLevel, createdAt, updatedAt]
+      properties:
+        participantId: { $ref: '#/components/schemas/ParticipantId' }
+        legalName: { type: string, minLength: 1, maxLength: 200 }
+        role: { $ref: '#/components/schemas/ParticipantRole' }
+        status: { $ref: '#/components/schemas/ParticipantStatus' }
+        assuranceLevel: { type: string, minLength: 1 }
+        permissionScopes:
+          type: array
+          items: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    ParticipantCreateRequest:
+      type: object
+      required: [legalName, role, assuranceLevel]
+      properties:
+        legalName: { type: string, minLength: 1, maxLength: 200 }
+        role: { $ref: '#/components/schemas/ParticipantRole' }
+        assuranceLevel: { type: string, minLength: 1 }
+        permissionScopes:
+          type: array
+          items: { type: string }
+    ParticipantUpdateRequest:
+      type: object
+      properties:
+        legalName: { type: string, minLength: 1, maxLength: 200 }
+        assuranceLevel: { type: string, minLength: 1 }
+        permissionScopes:
+          type: array
+          items: { type: string }
+    ParticipantListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Participant' }
+        nextCursor: { type: string }
+    ParticipantResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/Participant' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    ParticipantListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/ParticipantListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }

@@ -1,0 +1,176 @@
+openapi: 3.1.0
+info:
+  title: Settora Breaks API
+  version: 0.1.0
+  description: Break detection and time-boxed exception workflows.
+  x-domain: breaks
+  x-product-slug: settora
+  license: { name: Proprietary }
+servers:
+  - url: https://api.settora.local
+security:
+  - apiKey: []
+tags:
+  - name: Breaks
+    description: Break detection and exception workflows
+paths:
+  /v1/breaks:
+    get:
+      operationId: listBreakCases
+      tags: [Breaks]
+      summary: List break cases
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: status
+          in: query
+          schema: { $ref: ./breaks.schemas.yaml#/components/schemas/BreakStatus }
+        - name: dealId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Breaks page
+          content:
+            application/json:
+              schema: { $ref: ./breaks.schemas.yaml#/components/schemas/BreakCaseListResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: openBreakCase
+      tags: [Breaks]
+      summary: Open a break case
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: ./breaks.schemas.yaml#/components/schemas/BreakCaseCreateRequest }
+      responses:
+        '201':
+          description: Break opened
+          content:
+            application/json:
+              schema: { $ref: ./breaks.schemas.yaml#/components/schemas/BreakCaseResponse }
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/breaks/{breakId}:
+    get:
+      operationId: getBreakCase
+      tags: [Breaks]
+      summary: Get break case
+      parameters:
+        - name: breakId
+          in: path
+          required: true
+          schema: { $ref: ./breaks.schemas.yaml#/components/schemas/BreakId }
+      responses:
+        '200':
+          description: Break case
+          content:
+            application/json:
+              schema: { $ref: ./breaks.schemas.yaml#/components/schemas/BreakCaseResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/breaks/{breakId}/assign:
+    post:
+      operationId: assignBreakCase
+      tags: [Breaks]
+      summary: Assign owner and optional deadline
+      x-repository: none
+      parameters:
+        - name: breakId
+          in: path
+          required: true
+          schema: { $ref: ./breaks.schemas.yaml#/components/schemas/BreakId }
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: ./breaks.schemas.yaml#/components/schemas/BreakAssignRequest }
+      responses:
+        '200':
+          description: Assigned
+          content:
+            application/json:
+              schema: { $ref: ./breaks.schemas.yaml#/components/schemas/BreakCaseResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/breaks/{breakId}/resolve:
+    post:
+      operationId: resolveBreakCase
+      tags: [Breaks]
+      summary: Resolve a break case
+      x-repository: none
+      parameters:
+        - name: breakId
+          in: path
+          required: true
+          schema: { $ref: ./breaks.schemas.yaml#/components/schemas/BreakId }
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: ./breaks.schemas.yaml#/components/schemas/BreakResolveRequest }
+      responses:
+        '200':
+          description: Resolved
+          content:
+            application/json:
+              schema: { $ref: ./breaks.schemas.yaml#/components/schemas/BreakCaseResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/breaks/{breakId}/escalate:
+    post:
+      operationId: escalateBreakCase
+      tags: [Breaks]
+      summary: Escalate before fail-to-settle deadline
+      x-repository: none
+      parameters:
+        - name: breakId
+          in: path
+          required: true
+          schema: { $ref: ./breaks.schemas.yaml#/components/schemas/BreakId }
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: ./breaks.schemas.yaml#/components/schemas/BreakEscalateRequest }
+      responses:
+        '200':
+          description: Escalated
+          content:
+            application/json:
+              schema: { $ref: ./breaks.schemas.yaml#/components/schemas/BreakCaseResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

@@ -1,0 +1,116 @@
+openapi: 3.1.0
+info:
+  title: Settora Supervision API
+  version: 0.1.0
+  description: Authorised regulator supervisory subscriptions and agreed-field feeds.
+  x-domain: supervision
+  x-product-slug: settora
+  license: { name: Proprietary }
+servers:
+  - url: https://api.settora.local
+security:
+  - apiKey: []
+tags:
+  - name: Supervision
+    description: Supervisory views for authorised regulators
+paths:
+  /v1/supervision/subscriptions:
+    get:
+      operationId: listSupervisorySubscriptions
+      tags: [Supervision]
+      summary: List supervisory subscriptions
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Subscriptions
+          content:
+            application/json:
+              schema: { $ref: ./supervision.schemas.yaml#/components/schemas/SupervisorySubscriptionListResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common/responses.yaml#/components/responses/Forbidden
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createSupervisorySubscription
+      tags: [Supervision]
+      summary: Grant a supervisory subscription
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: ./supervision.schemas.yaml#/components/schemas/SupervisorySubscriptionCreateRequest }
+      responses:
+        '201':
+          description: Subscription created
+          content:
+            application/json:
+              schema: { $ref: ./supervision.schemas.yaml#/components/schemas/SupervisorySubscriptionResponse }
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common/responses.yaml#/components/responses/Forbidden
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/supervision/subscriptions/{subscriptionId}:
+    get:
+      operationId: getSupervisorySubscription
+      tags: [Supervision]
+      summary: Get supervisory subscription
+      parameters:
+        - name: subscriptionId
+          in: path
+          required: true
+          schema: { $ref: ./supervision.schemas.yaml#/components/schemas/SubscriptionId }
+      responses:
+        '200':
+          description: Subscription
+          content:
+            application/json:
+              schema: { $ref: ./supervision.schemas.yaml#/components/schemas/SupervisorySubscriptionResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common/responses.yaml#/components/responses/Forbidden
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/supervision/subscriptions/{subscriptionId}/feed:
+    get:
+      operationId: getSupervisoryFeed
+      tags: [Supervision]
+      summary: Pull near-real-time agreed fields for a subscription
+      x-repository: none
+      parameters:
+        - name: subscriptionId
+          in: path
+          required: true
+          schema: { $ref: ./supervision.schemas.yaml#/components/schemas/SubscriptionId }
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Agreed-field feed
+          content:
+            application/json:
+              schema: { $ref: ./supervision.schemas.yaml#/components/schemas/SupervisoryFeedResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common/responses.yaml#/components/responses/Forbidden
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

@@ -1,0 +1,313 @@
+openapi: 3.1.0
+info:
+  title: Settora Deals API
+  version: 0.1.0
+  description: Shared trade / trade-finance deal state, assertions, milestones, provenance.
+  x-domain: deals
+  x-product-slug: settora
+  license: { name: Proprietary }
+servers:
+  - url: https://api.settora.local
+security:
+  - apiKey: []
+tags:
+  - name: Deals
+    description: Shared trade and trade-finance deal state
+paths:
+  /v1/deals:
+    get:
+      operationId: listTradeDeals
+      tags: [Deals]
+      summary: List deals (shared blotter)
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: dealType
+          in: query
+          schema: { $ref: ./deals.schemas.yaml#/components/schemas/DealType }
+        - name: status
+          in: query
+          schema: { $ref: ./deals.schemas.yaml#/components/schemas/DealStatus }
+      responses:
+        '200':
+          description: Deals page
+          content:
+            application/json:
+              schema: { $ref: ./deals.schemas.yaml#/components/schemas/TradeDealListResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createTradeDeal
+      tags: [Deals]
+      summary: Create a trade deal
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: ./deals.schemas.yaml#/components/schemas/TradeDealCreateRequest }
+      responses:
+        '201':
+          description: Deal created
+          content:
+            application/json:
+              schema: { $ref: ./deals.schemas.yaml#/components/schemas/TradeDealResponse }
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/deals/{dealId}:
+    get:
+      operationId: getTradeDeal
+      tags: [Deals]
+      summary: Get deal
+      parameters:
+        - name: dealId
+          in: path
+          required: true
+          schema: { $ref: ./deals.schemas.yaml#/components/schemas/DealId }
+      responses:
+        '200':
+          description: Deal
+          content:
+            application/json:
+              schema: { $ref: ./deals.schemas.yaml#/components/schemas/TradeDealResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/deals/{dealId}/assertions:
+    get:
+      operationId: listDealAssertions
+      tags: [Deals]
+      summary: List party assertions for a deal
+      parameters:
+        - name: dealId
+          in: path
+          required: true
+          schema: { $ref: ./deals.schemas.yaml#/components/schemas/DealId }
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Assertions
+          content:
+            application/json:
+              schema: { $ref: ./deals.schemas.yaml#/components/schemas/StateAssertionListResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: submitStateAssertion
+      tags: [Deals]
+      summary: Submit a party state assertion
+      parameters:
+        - name: dealId
+          in: path
+          required: true
+          schema: { $ref: ./deals.schemas.yaml#/components/schemas/DealId }
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: ./deals.schemas.yaml#/components/schemas/StateAssertionCreateRequest }
+      responses:
+        '201':
+          description: Assertion recorded
+          content:
+            application/json:
+              schema: { $ref: ./deals.schemas.yaml#/components/schemas/StateAssertionResponse }
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/deals/{dealId}/agreed-state:
+    get:
+      operationId: getAgreedState
+      tags: [Deals]
+      summary: Get current agreed state
+      parameters:
+        - name: dealId
+          in: path
+          required: true
+          schema: { $ref: ./deals.schemas.yaml#/components/schemas/DealId }
+      responses:
+        '200':
+          description: Agreed state
+          content:
+            application/json:
+              schema: { $ref: ./deals.schemas.yaml#/components/schemas/AgreedStateResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/deals/{dealId}/freeze-fields:
+    post:
+      operationId: freezeDealFields
+      tags: [Deals]
+      summary: Freeze disputed fields (rest of book continues)
+      x-repository: none
+      parameters:
+        - name: dealId
+          in: path
+          required: true
+          schema: { $ref: ./deals.schemas.yaml#/components/schemas/DealId }
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: ./deals.schemas.yaml#/components/schemas/FreezeFieldsRequest }
+      responses:
+        '200':
+          description: Fields frozen
+          content:
+            application/json:
+              schema: { $ref: ./deals.schemas.yaml#/components/schemas/AgreedStateResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/deals/{dealId}/milestones:
+    get:
+      operationId: listDocumentMilestones
+      tags: [Deals]
+      summary: List CA/TF milestones
+      parameters:
+        - name: dealId
+          in: path
+          required: true
+          schema: { $ref: ./deals.schemas.yaml#/components/schemas/DealId }
+      responses:
+        '200':
+          description: Milestones
+          content:
+            application/json:
+              schema: { $ref: ./deals.schemas.yaml#/components/schemas/DocumentMilestoneListResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: attestDocumentMilestone
+      tags: [Deals]
+      summary: Attest a documentary milestone
+      parameters:
+        - name: dealId
+          in: path
+          required: true
+          schema: { $ref: ./deals.schemas.yaml#/components/schemas/DealId }
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: ./deals.schemas.yaml#/components/schemas/DocumentMilestoneCreateRequest }
+      responses:
+        '201':
+          description: Milestone attested
+          content:
+            application/json:
+              schema: { $ref: ./deals.schemas.yaml#/components/schemas/DocumentMilestoneResponse }
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/deals/{dealId}/corporate-actions:
+    get:
+      operationId: listCorporateActionEvents
+      tags: [Deals]
+      summary: List corporate-action events
+      parameters:
+        - name: dealId
+          in: path
+          required: true
+          schema: { $ref: ./deals.schemas.yaml#/components/schemas/DealId }
+      responses:
+        '200':
+          description: Corporate actions
+          content:
+            application/json:
+              schema: { $ref: ./deals.schemas.yaml#/components/schemas/CorporateActionEventListResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: recordCorporateActionEvent
+      tags: [Deals]
+      summary: Record a corporate-action event
+      parameters:
+        - name: dealId
+          in: path
+          required: true
+          schema: { $ref: ./deals.schemas.yaml#/components/schemas/DealId }
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: ./deals.schemas.yaml#/components/schemas/CorporateActionEventCreateRequest }
+      responses:
+        '201':
+          description: Event recorded
+          content:
+            application/json:
+              schema: { $ref: ./deals.schemas.yaml#/components/schemas/CorporateActionEventResponse }
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/provenance/{assetId}:
+    get:
+      operationId: getAssetProvenance
+      tags: [Deals]
+      summary: Query asset / rehypothecation provenance chain
+      parameters:
+        - name: assetId
+          in: path
+          required: true
+          schema: { type: string, minLength: 1 }
+      responses:
+        '200':
+          description: Provenance chain
+          content:
+            application/json:
+              schema: { $ref: ./deals.schemas.yaml#/components/schemas/ProvenanceRecordResponse }
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common/responses.yaml#/components/responses/Forbidden
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
